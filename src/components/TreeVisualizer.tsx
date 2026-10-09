@@ -50,15 +50,33 @@ export const TreeVisualizer: React.FC<TreeVisualizerProps> = ({ root, activeNode
     };
 
     const layoutRoot = useMemo(() => {
+        // Pre-calculate number of leaves for each node to allocate width proportionally
+        const leavesCountMap = new Map<string, number>();
+        
+        const computeLeaves = (node: TreeNode): number => {
+            if (node.children.length === 0) {
+                leavesCountMap.set(node.id, 1);
+                return 1;
+            }
+            const count = node.children.reduce((sum, child) => sum + computeLeaves(child), 0);
+            leavesCountMap.set(node.id, count);
+            return count;
+        };
+        
+        computeLeaves(root);
+
         const calculateLayout = (node: TreeNode, left: number, right: number, y: number): LayoutNode => {
             const x = (left + right) / 2;
-            const numChildren = node.children.length;
+            let currentLeft = left;
+            const totalLeaves = leavesCountMap.get(node.id) || 1;
 
-            const childrenLayout = node.children.map((child, index) => {
-                const sectionWidth = (right - left) / numChildren;
-                const childLeft = left + index * sectionWidth;
-                const childRight = childLeft + sectionWidth;
-                return calculateLayout(child, childLeft, childRight, y + VERTICAL_SPACING);
+            const childrenLayout = node.children.map(child => {
+                const childLeaves = leavesCountMap.get(child.id) || 1;
+                const sectionWidth = (childLeaves / totalLeaves) * (right - left);
+                const childRight = currentLeft + sectionWidth;
+                const layout = calculateLayout(child, currentLeft, childRight, y + VERTICAL_SPACING);
+                currentLeft = childRight;
+                return layout;
             });
 
             return {
@@ -70,7 +88,12 @@ export const TreeVisualizer: React.FC<TreeVisualizerProps> = ({ root, activeNode
         };
 
         // Reducimos el margen superior inicial (y: 60 -> 40)
-        return calculateLayout(root, 0, TREE_WIDTH, 40);
+        // Adjust width dynamically if there are too many leaves
+        const totalTreeLeaves = leavesCountMap.get(root.id) || 1;
+        const minSpacingPerLeaf = 80;
+        const dynamicWidth = Math.max(TREE_WIDTH, totalTreeLeaves * minSpacingPerLeaf);
+        
+        return calculateLayout(root, 0, dynamicWidth, 40);
     }, [root]);
 
     const renderConnections = (node: LayoutNode): React.ReactNode[] => {
