@@ -148,3 +148,16 @@ export const parseTreeFromJSON = (data: any): TreeNode => {
 
     return parseNode(data, 'MAX');
 };
+
+// Utilidad para invertir los tipos de nodos del árbol (MAX <-> MIN)
+export const toggleTreeType = (node: TreeNode): TreeNode => {
+    if (node.type === 'LEAF') {
+        return { ...node }; // Clonamos el nodo hoja
+    }
+    const newType: NodeType = node.type === 'MAX' ? 'MIN' : 'MAX';
+    return {
+        ...node,
+        type: newType,
+        children: node.children.map(toggleTreeType),
+    };
+};
