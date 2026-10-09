@@ -1,4 +1,5 @@
-import { useMemo, useState, MouseEvent, WheelEvent } from 'react';
+import { useMemo, useState } from 'react';
+import type { MouseEvent, WheelEvent } from 'react';
 import type { TreeNode } from '../core/tree';
 
 interface LayoutNode extends TreeNode {
@@ -13,7 +14,6 @@ interface TreeVisualizerProps {
 }
 
 const TREE_WIDTH = 900;
-const TREE_HEIGHT = 420;
 const NODE_SIZE = 50;
 const VERTICAL_SPACING = 100;
 
